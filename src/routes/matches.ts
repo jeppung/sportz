@@ -6,7 +6,6 @@ import {
 import { db } from "../db/db";
 import { matches } from "../db/schema";
 import { getMatchStatus } from "../utils/match-status";
-import z from "zod";
 import { desc } from "drizzle-orm";
 
 const MAX_LIMIT = 100;
@@ -15,11 +14,10 @@ export const matchRouter = Router();
 
 matchRouter.get("/", async (req, res) => {
   const parsed = listMatchesQuerySchema.safeParse(req.query);
-
   if (!parsed.success) {
     return res.status(400).json({
       error: "invalid payload",
-      details: z.treeifyError(parsed.error),
+      details: parsed.error.issues,
     });
   }
 
@@ -42,25 +40,27 @@ matchRouter.get("/", async (req, res) => {
 
 matchRouter.post("/", async (req, res) => {
   const parsed = createMatchSchema.safeParse(req.body);
-  const { data } = parsed;
-
   if (!parsed.success) {
     return res.status(400).json({
       error: "invalid payload",
-      details: z.treeifyError(parsed.error),
+      details: parsed.error.issues,
     });
   }
+
+  const {
+    data: { startTime, endTime, homeScore, awayScore },
+  } = parsed;
 
   try {
     const [event] = await db
       .insert(matches)
       .values({
         ...parsed.data,
-        startTime: new Date(data!.startTime),
-        endTime: new Date(data!.endTime),
-        homeScore: data!.homeScore ?? 0,
-        awayScore: data!.awayScore ?? 0,
-        status: getMatchStatus(data!.startTime, data!.endTime),
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+        homeScore: homeScore ?? 0,
+        awayScore: awayScore ?? 0,
+        status: getMatchStatus(startTime, endTime),
       })
       .returning();
 
