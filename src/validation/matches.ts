@@ -24,21 +24,6 @@ export const createMatchSchema = z
     homeScore: z.coerce.number().int().nonnegative().optional(),
     awayScore: z.coerce.number().int().nonnegative().optional(),
   })
-  .refine(
-    (data) => {
-      try {
-        const startDate = new Date(data.startTime);
-        const endDate = new Date(data.endTime);
-        return !isNaN(startDate.getTime()) && !isNaN(endDate.getTime());
-      } catch {
-        return false;
-      }
-    },
-    {
-      message: "startTime and endTime must be valid ISO date strings",
-      path: ["startTime", "endTime"],
-    },
-  )
   .superRefine((data, ctx) => {
     const startDate = new Date(data.startTime);
     const endDate = new Date(data.endTime);
