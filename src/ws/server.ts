@@ -3,6 +3,8 @@ import { WebSocket } from "ws";
 import z from "zod";
 import { createMatchSchema } from "../validation/matches";
 import { Server as HttpServer } from "http";
+import { wsArcjet } from "../arcjet";
+import { Request } from "express";
 
 interface JsonPayload {
   [key: string]: unknown;
@@ -45,7 +47,23 @@ export function attachWebSocketServer(server: HttpServer) {
     });
   }, 30000);
 
-  wss.on("connection", (socket: WebSocketWithAlive) => {
+  wss.on("connection", async (socket: WebSocketWithAlive, req: Request) => {
+    if (wsArcjet) {
+      try {
+        const decision = await wsArcjet.protect(req);
+        if (decision.isDenied()) {
+          const code = decision.reason.isRateLimit() ? 1013 : 1008;
+          const reason = decision.reason.isRateLimit()
+            ? "Rate limit exceeded"
+            : "Access denied";
+          socket.close(code, reason);
+        }
+      } catch (e) {
+        console.error("WS connection error", e);
+        socket.close(1011, "Server security error");
+      }
+    }
+
     socket.isAlive = true;
     sendJson(socket, { type: "welcome" });
 
