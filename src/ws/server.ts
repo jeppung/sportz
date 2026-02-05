@@ -33,9 +33,12 @@ export function attachWebSocketServer(server: HttpServer) {
   const interval = setInterval(() => {
     wss.clients.forEach((client) => {
       const ws = client as WebSocketWithAlive;
-      if (ws.isAlive === false) return ws.terminate();
-      ws.isAlive = false;
-      ws.ping();
+      if (ws.isAlive === false) {
+        ws.terminate();
+      } else {
+        ws.isAlive = false;
+        ws.ping();
+      }
     });
   }, 30000);
 
