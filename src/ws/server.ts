@@ -19,7 +19,8 @@ function sendJson(socket: WebSocket, payload: JsonPayload) {
 
 function broadcast(wss: Server, payload: JsonPayload) {
   for (const client of wss.clients) {
-    sendJson(client, payload);
+    if (client.readyState !== WebSocket.OPEN) continue;
+    client.send(JSON.stringify(payload));
   }
 }
 
