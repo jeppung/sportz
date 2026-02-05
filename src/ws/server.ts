@@ -34,7 +34,9 @@ export function attachWebSocketServer(server: HttpServer) {
   const interval = setInterval(() => {
     wss.clients.forEach((client) => {
       const ws = client as WebSocketWithAlive;
-      if (ws.isAlive === false) {
+      if (ws.readyState !== WebSocket.OPEN) {
+        ws.terminate();
+      } else if (ws.isAlive === false) {
         ws.terminate();
       } else {
         ws.isAlive = false;
